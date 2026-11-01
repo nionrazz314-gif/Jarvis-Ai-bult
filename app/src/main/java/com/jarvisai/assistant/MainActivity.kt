@@ -156,6 +156,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         if (requestCode == speechRequest) {
             val spoken = if (resultCode == RESULT_OK) data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty() else ""
             web.evaluateJavascript("window.onJarvisSpeech(${JSONObject.quote(spoken)})", null)
+            startService(Intent(this, WakeWordService::class.java).setAction("RESUME_WAKE"))
         }
     }
 
