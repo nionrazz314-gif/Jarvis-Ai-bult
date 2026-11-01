@@ -69,7 +69,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                     val serviceIntent = Intent(this@MainActivity, WakeWordService::class.java)
                     if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(serviceIntent) else startService(serviceIntent)
-                } else requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), wakePermissionRequest)
+                } else requestPermissions(if (android.os.Build.VERSION.SDK_INT >= 33) arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS) else arrayOf(Manifest.permission.RECORD_AUDIO), wakePermissionRequest)
             }
         }
         @JavascriptInterface fun stopWakeWord() {
