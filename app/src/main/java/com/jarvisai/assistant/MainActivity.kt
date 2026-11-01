@@ -42,10 +42,30 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = tts?.setLanguage(Locale("bn", "BD"))
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                tts?.language = Locale.US
+            val engine = tts ?: return
+            // Prefer an installed Bengali (Bangladesh) female voice when the TTS engine provides one.
+            val bengaliVoices = engine.voices?.filter {
+                it.locale.language.equals("bn", ignoreCase = true)
+            }.orEmpty()
+            val femaleVoice = bengaliVoices.firstOrNull {
+                val n = it.name.lowercase()
+                n.contains("female") || n.contains("woman") || n.contains("fem")
             }
+            val preferredVoice = femaleVoice
+                ?: bengaliVoices.firstOrNull { it.locale.country.equals("BD", ignoreCase = true) }
+                ?: bengaliVoices.firstOrNull()
+            if (preferredVoice != null) {
+                engine.voice = preferredVoice
+            } else {
+                val result = engine.setLanguage(Locale("bn", "BD"))
+                if (result == TextToSpeech.LANG_MISSING_DATA ||
+                    result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    engine.setLanguage(Locale("bn", "IN"))
+                }
+            }
+            // A slightly softer, slower delivery sounds more conversational.
+            engine.setPitch(1.08f)
+            engine.setSpeechRate(0.94f)
         }
     }
 
@@ -76,7 +96,11 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             stopService(Intent(this@MainActivity, WakeWordService::class.java))
         }
         @JavascriptInterface fun speak(text: String) {
-            runOnUiThread { tts?.speak(text.take(2500), TextToSpeech.QUEUE_FLUSH, null, "jarvis") }
+            runOnUiThread {
+                tts?.setPitch(1.08f)
+                tts?.setSpeechRate(0.94f)
+                tts?.speak(text.take(2500), TextToSpeech.QUEUE_FLUSH, null, "jarvis")
+            }
         }
         @JavascriptInterface fun listen() {
             runOnUiThread {
@@ -127,7 +151,11 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
     private fun callGroq(p: String, k: String, m: String): String {
         require(k.isNotBlank()) { "Groq API key দিন Settings-এ" }
-        val b = JSONObject().put("model",m).put("messages",JSONArray().put(JSONObject().put("role","user").put("content",p)))
+        val messages = JSONArray()
+            .put(JSONObject().put("role", "system").put("content",
+                "You are Jarvis AI, a warm and intelligent personal assistant. Reply in natural, fluent Bangladeshi Bengali by default, using clear everyday কথ্য বাংলা and a friendly respectful tone. Match the user's language if they clearly use another language. Keep spoken answers smooth and easy to understand; avoid awkward translations and unnecessary English."))
+            .put(JSONObject().put("role","user").put("content",p))
+        val b = JSONObject().put("model",m).put("messages",messages)
         return post("https://api.groq.com/openai/v1/chat/completions", mapOf("Authorization" to "Bearer $k"), b)
             .getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content")
     }
