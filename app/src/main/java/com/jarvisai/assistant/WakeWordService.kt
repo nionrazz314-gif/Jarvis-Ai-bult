@@ -102,7 +102,15 @@ class WakeWordService : Service(), RecognitionListener {
     private fun updateNotification(message: String) {
         getSystemService(NotificationManager::class.java).notify(41, buildNotification(message))
     }
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) = START_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == "RESUME_WAKE" && model != null) {
+            triggered = false
+            speech = SpeechService(Recognizer(model, 16000.0f, "[\"jarvis\", \"[unk]\"]"), 16000.0f)
+            speech?.startListening(this)
+            updateNotification("Jarvis আবার শুনছে")
+        }
+        return START_STICKY
+    }
     override fun onDestroy() {
         speech?.stop()
         speech?.shutdown()
