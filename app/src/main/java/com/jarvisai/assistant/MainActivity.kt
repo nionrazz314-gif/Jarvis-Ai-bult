@@ -93,7 +93,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 try {
                     val answer = when (provider.lowercase()) {
                         "openai" -> callOpenAI(prompt, key, model.ifBlank { "gpt-4o-mini" })
-                        "gemini" -> callGemini(prompt, key, model.ifBlank { "gemini-2.0-flash" })
+                        "gemini" -> callGemini(prompt, key, model.ifBlank { "gemini-3.8-flash" })
                         "claude" -> callClaude(prompt, key, model.ifBlank { "claude-3-5-haiku-latest" })
                         else -> "এই provider এখনো সংযুক্ত নয়। OpenAI, Gemini অথবা Claude বেছে নিন।"
                     }
@@ -127,7 +127,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private fun callGemini(p: String, k: String, m: String): String {
         require(k.isNotBlank()) { "Gemini API key দিন Settings-এ" }
         val b = JSONObject().put("contents", JSONArray().put(JSONObject().put("parts", JSONArray().put(JSONObject().put("text",p)))))
-        return post("https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$k", emptyMap(), b)
+        return post("https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent", mapOf("x-goog-api-key" to k), b)
             .getJSONArray("candidates").getJSONObject(0).getJSONObject("content").getJSONArray("parts").getJSONObject(0).getString("text")
     }
     private fun callClaude(p: String, k: String, m: String): String {
