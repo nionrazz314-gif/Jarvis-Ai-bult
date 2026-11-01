@@ -25,7 +25,9 @@ function toggleSettings(){$('settings').style.display=$('settings').style.displa
 $('provider').addEventListener('change',()=>{if($('settings').style.display==='block')toggleSettings(),toggleSettings()});
 function saveSettings(){let p=$('provider').value;localStorage.setItem('key_'+p,$('key').value.trim());localStorage.setItem('model_'+p,$('model').value.trim());alert('Settings saved on this device.')}
 let voiceEnabled=localStorage.getItem('jarvis_voice')!=='off';function syncVoiceButton(){$('voiceToggle').textContent=voiceEnabled?'🔊 Voice ON':'🔇 Voice OFF'}function toggleVoice(){voiceEnabled=!voiceEnabled;localStorage.setItem('jarvis_voice',voiceEnabled?'on':'off');syncVoiceButton()}syncVoiceButton();
-function add(text,who){let d=document.createElement('div');d.className='msg '+who; if(who==='bot'){let t=document.createElement('span');t.className='tag';t.textContent='JARVIS';d.appendChild(t)}d.append(document.createTextNode(text));$('chat').appendChild(d);window.scrollTo(0,document.body.scrollHeight)}
+function add(text,who,save=true){let d=document.createElement('div');d.className='msg '+who; if(who==='bot'){let t=document.createElement('span');t.className='tag';t.textContent='JARVIS';d.appendChild(t)}d.append(document.createTextNode(text));$('chat').appendChild(d);if(save){let h=[];try{h=JSON.parse(localStorage.getItem('jarvis_history')||'[]')}catch(e){}h.push({text,who});localStorage.setItem('jarvis_history',JSON.stringify(h.slice(-100)))}window.scrollTo(0,document.body.scrollHeight)}
+function restoreHistory(){let h=[];try{h=JSON.parse(localStorage.getItem('jarvis_history')||'[]')}catch(e){}if(h.length){$('chat').innerHTML='';h.forEach(x=>add(String(x.text||''),x.who==='user'?'user':'bot',false))}}
+restoreHistory();
 function send(){let p=$('prompt').value.trim();if(!p)return;add(p,'user');$('prompt').value='';add('ভাবছি...','bot');let provider=$('provider').value,key=localStorage.getItem('key_'+provider)||'',model=localStorage.getItem('model_'+provider)||'';if(window.Jarvis){Jarvis.ask(provider,p,key,model)}else{onJarvisAnswer('এই অ্যাপটি Android WebView-তে চালু করুন।')}}
 window.onJarvisAnswer=function(answer){let bots=document.querySelectorAll('.msg.bot');let last=bots[bots.length-1];last.textContent='';let t=document.createElement('span');t.className='tag';t.textContent='JARVIS';last.append(t,document.createTextNode(answer));if(voiceEnabled&&window.Jarvis)Jarvis.speak(answer)};
 function listen(){if(window.Jarvis)Jarvis.listen();else alert('Voice input Android app-এ ব্যবহার করুন।')}
@@ -34,5 +36,5 @@ function stopWake(){if(window.Jarvis)Jarvis.stopWakeWord();add('Jarvis backgroun
 window.onJarvisWake=function(){add('জি, Jarvis জেগে উঠেছে। এখন বলুন।','bot');if(voiceEnabled&&window.Jarvis)Jarvis.speak('জি, আমি শুনছি। বলুন।');listen()};
 window.onJarvisSpeech=function(text){if(text){$('prompt').value=text;send()}};
 window.onJarvisSpeechError=function(){add('ভয়েস ইনপুট চালু হয়নি। Microphone permission এবং Google Speech Services পরীক্ষা করুন।','bot')};
-function clearChat(){$('chat').innerHTML='';add('চ্যাট পরিষ্কার করা হয়েছে। কীভাবে সাহায্য করতে পারি?','bot')}
+function clearChat(){localStorage.removeItem('jarvis_history');$('chat').innerHTML='';add('চ্যাট পরিষ্কার করা হয়েছে। কীভাবে সাহায্য করতে পারি?','bot')}
 </script></body></html>
