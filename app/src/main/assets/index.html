@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#07111f"><title>JARVIS AI</title>
+<style>
+:root{--bg:#07111f;--panel:#101f32;--line:#203954;--cyan:#53d8ff;--txt:#edf7ff;--muted:#91a9bf}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#15395a 0,#07111f 45%);color:var(--txt);font:15px system-ui,Arial;min-height:100vh}
+header{padding:18px 18px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #1d344d;position:sticky;top:0;background:#081525ed;backdrop-filter:blur(12px);z-index:2}
+.logo{width:42px;height:42px;border:1px solid var(--cyan);border-radius:50%;display:grid;place-items:center;color:var(--cyan);font-weight:800;box-shadow:0 0 18px #53d8ff55}
+h1{font-size:18px;margin:0;letter-spacing:2px}small{color:var(--muted)}.status{margin-left:auto;color:#70e5ad;font-size:12px}
+main{max-width:760px;margin:auto;padding:16px 14px 130px}.hero{text-align:center;padding:24px 8px 18px}.orb{width:92px;height:92px;margin:auto;border-radius:50%;border:1px solid #53d8ff88;display:grid;place-items:center;color:var(--cyan);font-size:34px;box-shadow:0 0 30px #26b8ff35,inset 0 0 24px #26b8ff22}.hero h2{margin:14px 0 4px;letter-spacing:3px}.hero p{margin:0;color:var(--muted);font-size:13px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.toolbar select,.toolbar button,.settings input{background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:11px}
+.toolbar select{flex:1;min-width:130px}.toolbar button{color:var(--cyan)}
+#chat{display:flex;flex-direction:column;gap:12px;margin-top:16px}.msg{padding:13px 14px;border-radius:15px;max-width:92%;white-space:pre-wrap;line-height:1.5}.user{align-self:flex-end;background:#12456a;border:1px solid #22618a}.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--line)}.tag{font-size:10px;color:var(--cyan);display:block;margin-bottom:5px;letter-spacing:1px}
+.composer{position:fixed;bottom:0;left:0;right:0;background:#081525f5;border-top:1px solid var(--line);padding:12px;display:flex;gap:8px;max-width:760px;margin:auto}.composer input{min-width:0;flex:1;background:#102238;border:1px solid var(--line);border-radius:14px;padding:14px;color:white;font-size:15px;outline:none}.round{width:48px;border:1px solid #287ba3;background:#103a56;color:var(--cyan);border-radius:14px;font-size:19px}.send{background:var(--cyan);color:#031321;border:0;font-weight:800}
+.settings{display:none;background:var(--panel);border:1px solid var(--line);padding:14px;border-radius:15px;margin-top:12px}.settings label{display:block;color:var(--muted);font-size:12px;margin:10px 0 5px}.settings input{width:100%}.note{font-size:11px;color:#9eb3c7;line-height:1.5;margin-top:12px}
+</style></head><body>
+<header><div class="logo">J</div><div><h1>JARVIS AI</h1><small>PERSONAL AI ASSISTANT</small></div><div class="status">● READY</div></header>
+<main><section class="hero"><div class="orb">✧</div><h2>HELLO, I'M JARVIS</h2><p>আপনার ব্যক্তিগত AI সহকারী · বাংলা / English</p></section>
+<div class="toolbar"><select id="provider"><option value="gemini">Google Gemini</option><option value="openai">OpenAI ChatGPT</option><option value="claude">Anthropic Claude</option></select><button onclick="toggleSettings()">⚙ API Settings</button><button onclick="clearChat()">Clear chat</button></div>
+<section class="settings" id="settings"><b>API Key & Model</b><label>API Key (আপনার ফোনে সংরক্ষিত হবে)</label><input id="key" type="password" placeholder="Paste API key"><label>Model name (ঐচ্ছিক)</label><input id="model" placeholder="Default model ব্যবহার করতে ফাঁকা রাখুন"><button style="margin-top:12px" onclick="saveSettings()">Save settings</button><p class="note">API key ছাড়া ক্লাউড AI উত্তর দেবে না। নিজের key ব্যবহার করুন; অন্য কারও সঙ্গে শেয়ার করবেন না। এই প্রাথমিক সংস্করণে key অ্যাপের local storage-এ থাকে।</p></section>
+<div id="chat"><div class="msg bot"><span class="tag">JARVIS</span>স্বাগতম! আমি JARVIS। আমাকে কিছু জিজ্ঞেস করুন অথবা মাইক্রোফোন চাপুন।</div></div></main>
+<div class="composer"><button class="round" onclick="listen()" title="Voice input">🎙</button><input id="prompt" placeholder="JARVIS-কে কিছু বলুন..." onkeydown="if(event.key==='Enter')send()"><button class="round send" onclick="send()">➤</button></div>
+<script>
+const $=id=>document.getElementById(id);
+function toggleSettings(){$('settings').style.display=$('settings').style.display==='block'?'none':'block';$('key').value=localStorage.getItem('key_'+$('provider').value)||'';$('model').value=localStorage.getItem('model_'+$('provider').value)||''}
+$('provider').addEventListener('change',()=>{if($('settings').style.display==='block')toggleSettings(),toggleSettings()});
+function saveSettings(){let p=$('provider').value;localStorage.setItem('key_'+p,$('key').value.trim());localStorage.setItem('model_'+p,$('model').value.trim());alert('Settings saved on this device.')}
+function add(text,who){let d=document.createElement('div');d.className='msg '+who; if(who==='bot'){let t=document.createElement('span');t.className='tag';t.textContent='JARVIS';d.appendChild(t)}d.append(document.createTextNode(text));$('chat').appendChild(d);window.scrollTo(0,document.body.scrollHeight)}
+function send(){let p=$('prompt').value.trim();if(!p)return;add(p,'user');$('prompt').value='';add('ভাবছি...','bot');let provider=$('provider').value,key=localStorage.getItem('key_'+provider)||'',model=localStorage.getItem('model_'+provider)||'';if(window.Jarvis){Jarvis.ask(provider,p,key,model)}else{onJarvisAnswer('এই অ্যাপটি Android WebView-তে চালু করুন।')}}
+window.onJarvisAnswer=function(answer){let bots=document.querySelectorAll('.msg.bot');let last=bots[bots.length-1];last.textContent='';let t=document.createElement('span');t.className='tag';t.textContent='JARVIS';last.append(t,document.createTextNode(answer));};
+function listen(){if(window.Jarvis)Jarvis.listen();else alert('Voice input Android app-এ ব্যবহার করুন।')}
+window.onJarvisSpeech=function(text){if(text){$('prompt').value=text;send()}};
+window.onJarvisSpeechError=function(){add('ভয়েস ইনপুট চালু হয়নি। Microphone permission এবং Google Speech Services পরীক্ষা করুন।','bot')};
+function clearChat(){$('chat').innerHTML='';add('চ্যাট পরিষ্কার করা হয়েছে। কীভাবে সাহায্য করতে পারি?','bot')}
+</script></body></html>
