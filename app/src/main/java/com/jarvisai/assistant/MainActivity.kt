@@ -24,6 +24,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private val speechRequest = 701
     private val permissionRequest = 702
     private var waitingForMicPermission = false
+    private val wakePermissionRequest = 703
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +37,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         web.addJavascriptInterface(Bridge(), "Jarvis")
         setContentView(web)
         web.loadUrl("file:///android_asset/index.html")
+        handleWakeIntent(intent)
     }
 
     override fun onInit(status: Int) {
@@ -62,6 +64,17 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     inner class Bridge {
+        @JavascriptInterface fun startWakeWord() {
+            runOnUiThread {
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    val serviceIntent = Intent(this@MainActivity, WakeWordService::class.java)
+                    if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(serviceIntent) else startService(serviceIntent)
+                } else requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), wakePermissionRequest)
+            }
+        }
+        @JavascriptInterface fun stopWakeWord() {
+            stopService(Intent(this@MainActivity, WakeWordService::class.java))
+        }
         @JavascriptInterface fun speak(text: String) {
             runOnUiThread { tts?.speak(text.take(2500), TextToSpeech.QUEUE_FLUSH, null, "jarvis") }
         }
@@ -124,6 +137,19 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             .getJSONArray("content").getJSONObject(0).getString("text")
     }
 
+    private fun handleWakeIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra("JARVIS_WAKE", false) == true) {
+            intent.removeExtra("JARVIS_WAKE")
+            web.postDelayed({ web.evaluateJavascript("window.onJarvisWake && window.onJarvisWake()", null) }, 700)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleWakeIntent(intent)
+    }
+
     @Deprecated("Deprecated in Android")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -135,6 +161,10 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == wakePermissionRequest && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            val serviceIntent = Intent(this, WakeWordService::class.java)
+            if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(serviceIntent) else startService(serviceIntent)
+        }
         if (requestCode == permissionRequest && waitingForMicPermission) {
             waitingForMicPermission = false
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) startSpeechInput()
