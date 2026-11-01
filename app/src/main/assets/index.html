@@ -15,7 +15,7 @@ main{max-width:760px;margin:auto;padding:16px 14px 130px}.hero{text-align:center
 </style></head><body>
 <header><div class="logo">J</div><div><h1>JARVIS AI</h1><small>PERSONAL AI ASSISTANT</small></div><div class="status">● READY</div></header>
 <main><section class="hero"><div class="orb">✧</div><h2>HELLO, I'M JARVIS</h2><p>আপনার ব্যক্তিগত AI সহকারী · বাংলা / English</p></section>
-<div class="toolbar"><select id="provider"><option value="gemini">Google Gemini</option><option value="openai">OpenAI ChatGPT</option><option value="claude">Anthropic Claude</option></select><button onclick="toggleSettings()">⚙ API Settings</button><button onclick="clearChat()">Clear chat</button></div>
+<div class="toolbar"><select id="provider"><option value="gemini">Google Gemini</option><option value="openai">OpenAI ChatGPT</option><option value="claude">Anthropic Claude</option></select><button onclick="toggleSettings()">⚙ API Settings</button><button onclick="clearChat()">Clear chat</button><button onclick="startWake()">🔊 Jarvis চালু</button><button onclick="stopWake()">⏹ বন্ধ</button></div>
 <section class="settings" id="settings"><b>API Key & Model</b><label>API Key (আপনার ফোনে সংরক্ষিত হবে)</label><input id="key" type="password" placeholder="Paste API key"><label>Model name (ঐচ্ছিক)</label><input id="model" placeholder="Default model ব্যবহার করতে ফাঁকা রাখুন"><button style="margin-top:12px" onclick="saveSettings()">Save settings</button><p class="note">API key ছাড়া ক্লাউড AI উত্তর দেবে না। নিজের key ব্যবহার করুন; অন্য কারও সঙ্গে শেয়ার করবেন না। এই প্রাথমিক সংস্করণে key অ্যাপের local storage-এ থাকে।</p></section>
 <div id="chat"><div class="msg bot"><span class="tag">JARVIS</span>স্বাগতম! আমি JARVIS। আমাকে কিছু জিজ্ঞেস করুন অথবা মাইক্রোফোন চাপুন।</div></div></main>
 <div class="composer"><button class="round" onclick="listen()" title="Voice input">🎙</button><input id="prompt" placeholder="JARVIS-কে কিছু বলুন..." onkeydown="if(event.key==='Enter')send()"><button class="round send" onclick="send()">➤</button></div>
@@ -28,6 +28,9 @@ function add(text,who){let d=document.createElement('div');d.className='msg '+wh
 function send(){let p=$('prompt').value.trim();if(!p)return;add(p,'user');$('prompt').value='';add('ভাবছি...','bot');let provider=$('provider').value,key=localStorage.getItem('key_'+provider)||'',model=localStorage.getItem('model_'+provider)||'';if(window.Jarvis){Jarvis.ask(provider,p,key,model)}else{onJarvisAnswer('এই অ্যাপটি Android WebView-তে চালু করুন।')}}
 window.onJarvisAnswer=function(answer){let bots=document.querySelectorAll('.msg.bot');let last=bots[bots.length-1];last.textContent='';let t=document.createElement('span');t.className='tag';t.textContent='JARVIS';last.append(t,document.createTextNode(answer));};
 function listen(){if(window.Jarvis)Jarvis.listen();else alert('Voice input Android app-এ ব্যবহার করুন।')}
+function startWake(){if(window.Jarvis)Jarvis.startWakeWord();add('Jarvis wake word চালু করার অনুরোধ পাঠানো হয়েছে। প্রথমবার মডেল ডাউনলোড হবে।','bot')}
+function stopWake(){if(window.Jarvis)Jarvis.stopWakeWord();add('Jarvis background listening বন্ধ করার অনুরোধ পাঠানো হয়েছে।','bot')}
+window.onJarvisWake=function(){add('জি, Jarvis জেগে উঠেছে। এখন বলুন।','bot');listen()};
 window.onJarvisSpeech=function(text){if(text){$('prompt').value=text;send()}};
 window.onJarvisSpeechError=function(){add('ভয়েস ইনপুট চালু হয়নি। Microphone permission এবং Google Speech Services পরীক্ষা করুন।','bot')};
 function clearChat(){$('chat').innerHTML='';add('চ্যাট পরিষ্কার করা হয়েছে। কীভাবে সাহায্য করতে পারি?','bot')}
