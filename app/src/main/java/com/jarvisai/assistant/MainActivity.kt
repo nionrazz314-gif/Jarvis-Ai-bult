@@ -92,10 +92,11 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             thread {
                 try {
                     val answer = when (provider.lowercase()) {
+                        "groq" -> callGroq(prompt, key, model.ifBlank { "openai/gpt-oss-20b" })
                         "openai" -> callOpenAI(prompt, key, model.ifBlank { "gpt-4o-mini" })
                         "gemini" -> callGemini(prompt, key, model.ifBlank { "gemini-3.8-flash" })
                         "claude" -> callClaude(prompt, key, model.ifBlank { "claude-3-5-haiku-latest" })
-                        else -> "এই provider এখনো সংযুক্ত নয়। OpenAI, Gemini অথবা Claude বেছে নিন।"
+                        else -> "এই provider এখনো সংযুক্ত নয়। Groq, OpenAI, Gemini অথবা Claude বেছে নিন।"
                     }
                     val safe = JSONObject.quote(answer)
                     runOnUiThread { web.evaluateJavascript("window.onJarvisAnswer($safe)", null) }
@@ -122,6 +123,12 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         require(k.isNotBlank()) { "OpenAI API key দিন Settings-এ" }
         val b = JSONObject().put("model",m).put("messages", JSONArray().put(JSONObject().put("role","user").put("content",p)))
         return post("https://api.openai.com/v1/chat/completions", mapOf("Authorization" to "Bearer $k"), b)
+            .getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content")
+    }
+    private fun callGroq(p: String, k: String, m: String): String {
+        require(k.isNotBlank()) { "Groq API key দিন Settings-এ" }
+        val b = JSONObject().put("model",m).put("messages",JSONArray().put(JSONObject().put("role","user").put("content",p)))
+        return post("https://api.groq.com/openai/v1/chat/completions", mapOf("Authorization" to "Bearer $k"), b)
             .getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content")
     }
     private fun callGemini(p: String, k: String, m: String): String {
