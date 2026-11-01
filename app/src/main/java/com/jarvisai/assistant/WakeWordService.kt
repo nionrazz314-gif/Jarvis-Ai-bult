@@ -10,7 +10,6 @@ import android.os.Build
 import android.os.IBinder
 import org.json.JSONObject
 import org.vosk.LibVosk
-import org.vosk.LogLevel
 import org.vosk.Model
 import org.vosk.Recognizer
 import org.vosk.android.RecognitionListener
@@ -38,7 +37,6 @@ class WakeWordService : Service(), RecognitionListener {
             try {
                 val dir = File(filesDir, "vosk-model-small-en-us-0.15")
                 if (!File(dir, "conf").exists()) downloadModel(dir)
-                LibVosk.setLogLevel(LogLevel.WARN)
                 model = Model(dir.absolutePath)
                 val recognizer = Recognizer(model, 16000.0f, "[\"jarvis\", \"[unk]\"]")
                 speech = SpeechService(recognizer, 16000.0f)
