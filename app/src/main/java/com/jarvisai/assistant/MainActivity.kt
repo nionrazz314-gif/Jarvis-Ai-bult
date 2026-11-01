@@ -24,6 +24,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private val speechRequest = 701
     private val permissionRequest = 702
     private var waitingForMicPermission = false
+    private var pageLoaded = false
+    private var pendingWake = false
     private val wakePermissionRequest = 703
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,7 +35,12 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
         web.webChromeClient = WebChromeClient()
-        web.webViewClient = WebViewClient()
+        web.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                pageLoaded = true
+                if (pendingWake) dispatchWakeToPage()
+            }
+        }
         web.addJavascriptInterface(Bridge(), "Jarvis")
         setContentView(web)
         web.loadUrl("file:///android_asset/index.html")
@@ -118,7 +125,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     val answer = when (provider.lowercase()) {
                         "groq" -> callGroq(prompt, key, model.ifBlank { "openai/gpt-oss-20b" })
                         "openai" -> callOpenAI(prompt, key, model.ifBlank { "gpt-4o-mini" })
-                        "gemini" -> callGemini(prompt, key, model.ifBlank { "gemini-3.8-flash" })
+                        "gemini" -> callGemini(prompt, key, model.ifBlank { "gemini-2.5-flash" })
                         "claude" -> callClaude(prompt, key, model.ifBlank { "claude-3-5-haiku-latest" })
                         else -> "এই provider এখনো সংযুক্ত নয়। Groq, OpenAI, Gemini অথবা Claude বেছে নিন।"
                     }
@@ -175,8 +182,15 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private fun handleWakeIntent(intent: Intent?) {
         if (intent?.getBooleanExtra("JARVIS_WAKE", false) == true) {
             intent.removeExtra("JARVIS_WAKE")
-            web.postDelayed({ web.evaluateJavascript("window.onJarvisWake && window.onJarvisWake()", null) }, 700)
+            pendingWake = true
+            if (pageLoaded) dispatchWakeToPage()
         }
+    }
+
+    private fun dispatchWakeToPage() {
+        if (!pendingWake || !pageLoaded || !::web.isInitialized) return
+        pendingWake = false
+        web.evaluateJavascript("window.onJarvisWake && window.onJarvisWake()", null)
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -191,7 +205,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         if (requestCode == speechRequest) {
             val spoken = if (resultCode == RESULT_OK) data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty() else ""
             web.evaluateJavascript("window.onJarvisSpeech(${JSONObject.quote(spoken)})", null)
-            startService(Intent(this, WakeWordService::class.java).setAction("RESUME_WAKE"))
+            val resumeIntent = Intent(this, WakeWordService::class.java).setAction("RESUME_WAKE")
+            if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(resumeIntent) else startService(resumeIntent)
         }
     }
 
