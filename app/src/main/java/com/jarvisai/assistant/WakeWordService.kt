@@ -73,7 +73,10 @@ class WakeWordService : Service(), RecognitionListener {
 
     private fun detect(raw: String) {
         if (triggered) return
-        val heard = try { JSONObject(raw).optString("text").lowercase() } catch (_: Exception) { raw.lowercase() }
+        val heard = try {
+            val json = JSONObject(raw)
+            (json.optString("text").ifBlank { json.optString("partial") }).lowercase()
+        } catch (_: Exception) { raw.lowercase() }
         if (heard.contains("jarvis")) {
             triggered = true
             speech?.stop()
