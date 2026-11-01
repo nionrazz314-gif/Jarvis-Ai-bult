@@ -7,6 +7,8 @@
     <application
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:label="JARVIS AI"
+        android:icon="@drawable/ic_jarvis_launcher"
+        android:roundIcon="@drawable/ic_jarvis_launcher"
         android:usesCleartextTraffic="false"
         android:hardwareAccelerated="true">
         <activity
