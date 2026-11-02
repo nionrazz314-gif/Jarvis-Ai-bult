@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
 import android.net.Uri
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -149,12 +151,42 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     val allowed = host == "www.google.com" ||
                         host == "www.facebook.com" ||
                         host == "wa.me" ||
-                        host == "www.torproject.org"
+                        host == "www.torproject.org" ||
+                        host == "www.starlink.com" ||
+                        host == "www.banglalink.net" || host == "banglalink.net" ||
+                        host == "www.eutelsat.com" || host == "eutelsat.com" ||
+                        host == "kacific.com" || host == "www.kacific.com" ||
+                        host == "www.ses.com" || host == "ses.com" ||
+                        host == "www.viasat.com" || host == "viasat.com" ||
+                        host == "www.adntel.com" || host == "adntel.com"
                     if (!allowed) return@runOnUiThread
                     startActivity(Intent(Intent.ACTION_VIEW, uri))
                 } catch (_: Exception) {
                     web.evaluateJavascript("alert('লিংকটি খোলা যায়নি।')", null)
                 }
+            }
+        }
+        @JavascriptInterface fun getNetworkStatus(): String {
+            return try {
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val network = cm.activeNetwork
+                val caps = network?.let { cm.getNetworkCapabilities(it) }
+                    ?: return "এখন কোনো active internet network পাওয়া যায়নি।"
+                if (android.os.Build.VERSION.SDK_INT >= 35 &&
+                    caps.hasTransport(NetworkCapabilities.TRANSPORT_SATELLITE)) {
+                    "🛰️ Satellite transport detected — ফোনের Android system satellite network হিসেবে শনাক্ত করেছে।"
+                } else {
+                    val types = mutableListOf<String>()
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) types.add("Wi-Fi")
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) types.add("Mobile data")
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) types.add("Ethernet")
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) types.add("VPN")
+                    if (types.isEmpty()) "Internet network connected; type not identified."
+                    else "বর্তমান সংযোগ: " + types.joinToString(" + ") +
+                        ". Android satellite transport report করছে না; এর মানে satellite-to-phone service একেবারেই নেই—এমন নয়।"
+                }
+            } catch (e: Exception) {
+                "Network status পড়া যায়নি: " + (e.message ?: "unknown error")
             }
         }
         @JavascriptInterface fun speak(text: String) {
