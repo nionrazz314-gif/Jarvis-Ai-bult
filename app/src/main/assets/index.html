@@ -54,7 +54,7 @@ main{max-width:760px;margin:auto;padding:16px 14px 130px}.hero{text-align:center
 </section>
 <section class="settings" id="settings"><b>API Key & Model</b><label>API Key (আপনার ফোনে সংরক্ষিত হবে)</label><input id="key" type="password" placeholder="Groq API key এখানে দিন"><label>Model name (ঐচ্ছিক)</label><input id="model" placeholder="openai/gpt-oss-20b (Groq default)"><button style="margin-top:12px" onclick="saveSettings()">Save settings</button><p class="note">Groq ব্যবহার করতে <a href="https://console.groq.com/keys" target="_blank" style="color:var(--cyan)">Groq Console</a> থেকে API key তৈরি করে এখানে দিন। Provider অনুযায়ী আলাদা API key সংরক্ষিত হবে। Groq default model: openai/gpt-oss-20b। Free Tier-এ ব্যবহার ও rate limit আছে; সীমা শেষ হলে অপেক্ষা করতে হতে পারে। API key এই ফোনের local storage-এ থাকে; কারও সঙ্গে শেয়ার করবেন না।</p><label>বাংলা Voice নির্বাচন</label><select id="bnVoice" style="width:100%;background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:11px"><option value="">Available Bengali voices দেখুন</option></select><button style="margin-top:8px" onclick="loadBengaliVoices()">Refresh Bengali voices</button><button style="margin-top:8px" onclick="applyBengaliVoice()">Use selected voice</button><p class="note" id="voiceStatus">ফোনে Bengali female voice ইনস্টল থাকলে সেটি নির্বাচন করা যাবে।</p></section>
 <div id="chat"><div class="msg bot"><span class="tag">JARVIS</span>স্বাগতম! আমি JARVIS। আমাকে কিছু জিজ্ঞেস করুন অথবা মাইক্রোফোন চাপুন।</div></div></main>
-<div class="composer"><button class="round" onclick="listen()" title="Voice input">🎙</button><input id="prompt" placeholder="JARVIS-কে কিছু বলুন..." onkeydown="if(event.key==='Enter')send()"><button class="round send" onclick="send()">➤</button></div>
+<div class="composer" id="composer"><button type="button" class="round" onclick="listen()" title="Voice input">🎙</button><input id="prompt" placeholder="JARVIS-কে কিছু বলুন..." onkeydown="if(event.key==='Enter'){event.preventDefault();window.jarvisSendNow()}"><button type="button" id="sendBtn" class="round send" onclick="window.jarvisSendNow()">➤</button></div>
 <script>
 const $=id=>document.getElementById(id);
 function openExternal(url){if(window.Jarvis&&Jarvis.openExternal)Jarvis.openExternal(url);else window.open(url,'_blank')}
@@ -81,4 +81,21 @@ window.onJarvisSpeechError=function(){add('ভয়েস ইনপুট চা�
 function loadBengaliVoices(){if(!window.Jarvis){$('voiceStatus').textContent='Android app-এ খুলে চেষ্টা করুন।';return}try{let voices=JSON.parse(Jarvis.getBengaliVoices());let sel=$('bnVoice');sel.innerHTML='';if(!voices.length){$('voiceStatus').textContent='ফোনে কোনো Bengali TTS voice পাওয়া যায়নি। Google Speech Services থেকে Bengali voice data ইনস্টল করুন।';return}voices.forEach(v=>{let o=document.createElement('option');o.value=v.name;o.textContent=v.label;sel.appendChild(o)});$('voiceStatus').textContent='যে কণ্ঠটি শুনতে চান সেটি নির্বাচন করে Use selected voice চাপুন।'}catch(e){$('voiceStatus').textContent='Voice list পাওয়া যায়নি।'}}
 function applyBengaliVoice(){let name=$('bnVoice').value;if(!name){$('voiceStatus').textContent='আগে একটি voice নির্বাচন করুন।';return}let result=window.Jarvis.selectBengaliVoice(name);$('voiceStatus').textContent=result; if(window.Jarvis)Jarvis.speak('জি, আমি এখন নির্বাচিত বাংলা কণ্ঠে কথা বলছি।')}
 function clearChat(){localStorage.removeItem('jarvis_history');$('chat').innerHTML='';add('চ্যাট পরিষ্কার করা হয়েছে। কীভাবে সাহায্য করতে পারি?','bot')}
+/* Reliable Android WebView send handler and visible diagnostics. */
+window.jarvisSendNow=function(){
+  try {
+    const field=document.getElementById('prompt');
+    if(!field){alert('Jarvis input field পাওয়া যায়নি।');return;}
+    const message=field.value.trim();
+    if(!message){field.focus();return;}
+    if(typeof window.send==='function'){window.send();return;}
+    alert('Jarvis-এর JavaScript চালু হয়নি। অ্যাপটি বন্ধ করে আবার খুলুন।');
+  } catch(err) {
+    alert('Send error: '+(err&&err.message?err.message:String(err)));
+  }
+};
+window.addEventListener('error',function(e){
+  try { const chat=document.getElementById('chat'); if(chat){const d=document.createElement('div');d.className='msg bot';d.textContent='Jarvis app error: '+(e.message||'JavaScript error');chat.appendChild(d);} } catch(_){}
+});
+
 </script></body></html>
