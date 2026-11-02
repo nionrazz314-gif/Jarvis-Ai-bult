@@ -48,32 +48,45 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            val engine = tts ?: return
-            // Prefer an installed Bengali (Bangladesh) female voice when the TTS engine provides one.
-            val bengaliVoices = engine.voices?.filter {
-                it.locale.language.equals("bn", ignoreCase = true)
-            }.orEmpty()
-            val femaleVoice = bengaliVoices.firstOrNull {
-                val n = it.name.lowercase()
-                n.contains("female") || n.contains("woman") || n.contains("fem")
-            }
-            val preferredVoice = femaleVoice
-                ?: bengaliVoices.firstOrNull { it.locale.country.equals("BD", ignoreCase = true) }
-                ?: bengaliVoices.firstOrNull()
-            if (preferredVoice != null) {
-                engine.voice = preferredVoice
-            } else {
-                val result = engine.setLanguage(Locale("bn", "BD"))
-                if (result == TextToSpeech.LANG_MISSING_DATA ||
-                    result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    engine.setLanguage(Locale("bn", "IN"))
-                }
-            }
-            // A slightly softer, slower delivery sounds more conversational.
-            engine.setPitch(1.08f)
-            engine.setSpeechRate(0.94f)
+        if (status != TextToSpeech.SUCCESS) return
+        val engine = tts ?: return
+
+        // Android TTS cannot download Microsoft's NabanitaNeural voice by its ID.
+        // If the device's installed TTS engine exposes that voice, prefer it;
+        // otherwise choose an installed Bengali female voice, then bn-BD/bn-IN.
+        val bengaliVoices = engine.voices?.filter {
+            it.locale.language.equals("bn", ignoreCase = true)
+        }.orEmpty()
+
+        val preferredNamedVoice = bengaliVoices.firstOrNull {
+            val name = it.name.lowercase(Locale.ROOT)
+            name.contains("nabanita") || name.contains("tanishaa")
         }
+        val femaleVoice = bengaliVoices.firstOrNull {
+            val name = it.name.lowercase(Locale.ROOT)
+            name.contains("female") || name.contains("woman") ||
+                name.contains("fem") || name.contains("nabanita") ||
+                name.contains("tanishaa")
+        }
+        val bangladeshVoice = bengaliVoices.firstOrNull {
+            it.locale.country.equals("BD", ignoreCase = true)
+        }
+        val selectedVoice = preferredNamedVoice ?: femaleVoice ?: bangladeshVoice ?: bengaliVoices.firstOrNull()
+
+        if (selectedVoice != null) {
+            engine.voice = selectedVoice
+            engine.language = selectedVoice.locale
+        } else {
+            val bdResult = engine.setLanguage(Locale("bn", "BD"))
+            if (bdResult == TextToSpeech.LANG_MISSING_DATA ||
+                bdResult == TextToSpeech.LANG_NOT_SUPPORTED) {
+                engine.setLanguage(Locale("bn", "IN"))
+            }
+        }
+
+        // Slightly softer pitch and a natural conversational pace.
+        engine.setPitch(1.08f)
+        engine.setSpeechRate(0.94f)
     }
 
     private fun startSpeechInput() {
