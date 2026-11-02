@@ -35,12 +35,30 @@ main{max-width:760px;margin:auto;padding:16px 14px 130px}.hero{text-align:center
 </div>
 <p class="toolhint">নিরাপত্তা: Facebook ও WhatsApp-এ লগইন/অনুমতি তোমাকেই দিতে হবে। WhatsApp-এ মেসেজ পাঠানোর আগে অ্যাপে নিজে Send চাপবে। অচেনা .onion সাইট, ফাইল বা লিংক থেকে সতর্ক থাকো। Website/App Builder AI-কে কোড তৈরি করতে সাহায্য করে; নিজে থেকে প্রকাশ বা Play Store-এ আপলোড করে না।</p>
 </section>
+<section class="tools" id="satelliteHub">
+<h3>🛰️ SATELLITE INTERNET HUB</h3>
+<div class="toolcard" style="margin-bottom:9px">
+<b>Connection status</b><p id="satStatus">আপনার ফোনের নেটওয়ার্ক পরীক্ষা করা হচ্ছে…</p>
+<button onclick="refreshSatelliteStatus()">Refresh connection status</button>
+</div>
+<div class="toolgrid">
+<div class="toolcard"><div class="ico">🚀</div><b>Starlink Broadband</b><p>Dish/terminal ও active subscription প্রয়োজন। Jarvis থেকে সরাসরি satellite activate করা যাবে না।</p><button onclick="openExternal('https://www.starlink.com/bd')">Starlink Bangladesh</button></div>
+<div class="toolcard"><div class="ico">📡</div><b>Banglalink × Starlink</b><p>Supported 4G phone, Banglalink SIM ও eligible service/pack থাকলে satellite-to-mobile basic connectivity।</p><button onclick="openExternal('https://www.banglalink.net/bl-starlink')">Service details</button></div>
+<div class="toolcard"><div class="ico">🌍</div><b>Eutelsat OneWeb</b><p>Partner/operator-এর মাধ্যমে enterprise ও remote-site satellite broadband; compatible terminal লাগবে।</p><button onclick="openExternal('https://www.eutelsat.com/')">Eutelsat OneWeb</button></div>
+<div class="toolcard"><div class="ico">🛰️</div><b>Kacific</b><p>GEO satellite broadband; Bangladesh-এর authorised distributor ও coverage যাচাই করুন।</p><button onclick="openExternal('https://kacific.com/')">Kacific service</button></div>
+<div class="toolcard"><div class="ico">🏢</div><b>SES / O3b</b><p>Business, telecom ও enterprise connectivity; সাধারণ phone app দিয়ে একা সংযোগ সম্ভব নয়।</p><button onclick="openExternal('https://www.ses.com/')">SES Networks</button></div>
+<div class="toolcard"><div class="ico">📶</div><b>Viasat / Inmarsat</b><p>বিশেষত maritime, aviation ও enterprise satellite connectivity; provider-এর terminal/plan প্রয়োজন।</p><button onclick="openExternal('https://www.viasat.com/')">Viasat</button></div>
+<div class="toolcard"><div class="ico">🇧🇩</div><b>Bangladesh VSAT providers</b><p>Square Informatix, ADN Telecom ও DNS SatComm-এর কাছে অনুমোদিত VSAT package/coverage জেনে নিন।</p><button onclick="openExternal('https://www.adntel.com/')">ADN Telecom</button></div>
+</div>
+<p class="toolhint">গুরুত্বপূর্ণ: সব satellite network-এ Jarvis নিজে থেকে login, subscription, radio activation বা network switching করতে পারে না। Android/ফোন ও operator যদি satellite transport status expose করে, status এখানে দেখা যাবে; অনেক satellite-to-phone service-এ Android এটিকে আলাদা transport হিসেবে দেখায় না। Emergency SOS, SMS-only satellite ও full broadband এক জিনিস নয়। কেবল বাংলাদেশে বৈধ/অনুমোদিত service ও compatible hardware ব্যবহার করুন।</p>
+</section>
 <section class="settings" id="settings"><b>API Key & Model</b><label>API Key (আপনার ফোনে সংরক্ষিত হবে)</label><input id="key" type="password" placeholder="Groq API key এখানে দিন"><label>Model name (ঐচ্ছিক)</label><input id="model" placeholder="openai/gpt-oss-20b (Groq default)"><button style="margin-top:12px" onclick="saveSettings()">Save settings</button><p class="note">Groq ব্যবহার করতে <a href="https://console.groq.com/keys" target="_blank" style="color:var(--cyan)">Groq Console</a> থেকে API key তৈরি করে এখানে দিন। Provider অনুযায়ী আলাদা API key সংরক্ষিত হবে। Groq default model: openai/gpt-oss-20b। Free Tier-এ ব্যবহার ও rate limit আছে; সীমা শেষ হলে অপেক্ষা করতে হতে পারে। API key এই ফোনের local storage-এ থাকে; কারও সঙ্গে শেয়ার করবেন না।</p></section>
 <div id="chat"><div class="msg bot"><span class="tag">JARVIS</span>স্বাগতম! আমি JARVIS। আমাকে কিছু জিজ্ঞেস করুন অথবা মাইক্রোফোন চাপুন।</div></div></main>
 <div class="composer"><button class="round" onclick="listen()" title="Voice input">🎙</button><input id="prompt" placeholder="JARVIS-কে কিছু বলুন..." onkeydown="if(event.key==='Enter')send()"><button class="round send" onclick="send()">➤</button></div>
 <script>
 const $=id=>document.getElementById(id);
 function openExternal(url){if(window.Jarvis&&Jarvis.openExternal)Jarvis.openExternal(url);else window.open(url,'_blank')}
+function refreshSatelliteStatus(){if(window.Jarvis&&Jarvis.getNetworkStatus){$('satStatus').textContent=Jarvis.getNetworkStatus()}else{$('satStatus').textContent='Android app-এ চালু করলে network status দেখা যাবে।'}}
 function openWhatsApp(){let n=$('waNumber').value.replace(/[^0-9]/g,'');let m=$('waMessage').value.trim();if(n.length<8){alert('সঠিক ফোন নম্বর দিন, দেশের কোডসহ।');return}if(!m){alert('মেসেজ লিখুন।');return}openExternal('https://wa.me/'+n+'?text='+encodeURIComponent(m))}
 function builderPrompt(kind){let p=kind==='website'?'আমাকে একটি সম্পূর্ণ responsive website বানাতে সাহায্য করো। আগে প্রয়োজনীয় প্রশ্ন করো, তারপর HTML, CSS ও JavaScript কোড আলাদা করে দাও।':'আমাকে একটি Android app বানাতে সাহায্য করো। আগে প্রয়োজনীয় প্রশ্ন করো, তারপর Kotlin/Android Studio project structure ও সম্পূর্ণ source code দাও।';$('prompt').value=p;send();window.scrollTo(0,document.body.scrollHeight)}
 function toggleSettings(){$('settings').style.display=$('settings').style.display==='block'?'none':'block';$('key').value=localStorage.getItem('key_'+$('provider').value)||'';$('model').value=localStorage.getItem('model_'+$('provider').value)||''}
@@ -49,7 +67,7 @@ function saveSettings(){let p=$('provider').value;localStorage.setItem('key_'+p,
 let voiceEnabled=localStorage.getItem('jarvis_voice')!=='off';function syncVoiceButton(){$('voiceToggle').textContent=voiceEnabled?'🔊 Voice ON':'🔇 Voice OFF'}function toggleVoice(){voiceEnabled=!voiceEnabled;localStorage.setItem('jarvis_voice',voiceEnabled?'on':'off');syncVoiceButton()}syncVoiceButton();
 function add(text,who,save=true){let d=document.createElement('div');d.className='msg '+who; if(who==='bot'){let t=document.createElement('span');t.className='tag';t.textContent='JARVIS';d.appendChild(t)}d.append(document.createTextNode(text));$('chat').appendChild(d);if(save){let h=[];try{h=JSON.parse(localStorage.getItem('jarvis_history')||'[]')}catch(e){}h.push({text,who});localStorage.setItem('jarvis_history',JSON.stringify(h.slice(-100)))}window.scrollTo(0,document.body.scrollHeight)}
 function restoreHistory(){let h=[];try{h=JSON.parse(localStorage.getItem('jarvis_history')||'[]')}catch(e){}if(h.length){$('chat').innerHTML='';h.forEach(x=>add(String(x.text||''),x.who==='user'?'user':'bot',false))}}
-restoreHistory();
+restoreHistory();\nrefreshSatelliteStatus();
 function send(){let p=$('prompt').value.trim();if(!p)return;add(p,'user');$('prompt').value='';add('ভাবছি...','bot');let provider=$('provider').value,key=localStorage.getItem('key_'+provider)||'',model=localStorage.getItem('model_'+provider)||'';if(window.Jarvis){Jarvis.ask(provider,p,key,model)}else{onJarvisAnswer('এই অ্যাপটি Android WebView-তে চালু করুন।')}}
 window.onJarvisAnswer=function(answer){let bots=document.querySelectorAll('.msg.bot');let last=bots[bots.length-1];last.textContent='';let t=document.createElement('span');t.className='tag';t.textContent='JARVIS';last.append(t,document.createTextNode(answer));if(voiceEnabled&&window.Jarvis)Jarvis.speak(answer)};
 function listen(){if(window.Jarvis)Jarvis.listen();else alert('Voice input Android app-এ ব্যবহার করুন।')}
