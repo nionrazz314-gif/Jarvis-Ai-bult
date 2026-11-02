@@ -11,6 +11,7 @@ import android.net.Uri
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.view.WindowManager
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.webkit.JavascriptInterface
@@ -45,10 +46,14 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         tts = TextToSpeech(this, this)
         web = WebView(this)
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
+        web.settings.setSupportZoom(false)
+        web.isFocusable = true
+        web.isFocusableInTouchMode = true
         web.webChromeClient = WebChromeClient()
         web.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -68,6 +73,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         wakeReceiverRegistered = true
         web.addJavascriptInterface(Bridge(), "Jarvis")
         setContentView(web)
+        web.requestFocus()
         web.loadUrl("file:///android_asset/index.html")
         handleWakeIntent(intent)
     }
