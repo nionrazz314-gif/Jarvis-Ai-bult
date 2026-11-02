@@ -82,36 +82,28 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         val bengaliVoices = engine.voices?.filter {
             it.locale.language.equals("bn", ignoreCase = true)
         }.orEmpty()
-
-        val preferredNamedVoice = bengaliVoices.firstOrNull {
-            val name = it.name.lowercase(Locale.ROOT)
-            name.contains("nabanita") || name.contains("tanishaa")
-        }
-        val femaleVoice = bengaliVoices.firstOrNull {
-            val name = it.name.lowercase(Locale.ROOT)
-            name.contains("female") || name.contains("woman") ||
-                name.contains("fem") || name.contains("nabanita") ||
-                name.contains("tanishaa")
-        }
-        val bangladeshVoice = bengaliVoices.firstOrNull {
-            it.locale.country.equals("BD", ignoreCase = true)
-        }
-        val selectedVoice = preferredNamedVoice ?: femaleVoice ?: bangladeshVoice ?: bengaliVoices.firstOrNull()
+        val savedName = getSharedPreferences("jarvis_voice", MODE_PRIVATE).getString("voice_name", null)
+        val selectedVoice = bengaliVoices.firstOrNull { it.name == savedName }
+            ?: bengaliVoices.firstOrNull {
+                val name = it.name.lowercase(Locale.ROOT)
+                name.contains("nabanita") || name.contains("tanishaa") ||
+                    name.contains("female") || name.contains("woman") ||
+                    name.contains("fem") || name.contains("bnf")
+            }
+            ?: bengaliVoices.firstOrNull { it.locale.country.equals("BD", ignoreCase = true) }
+            ?: bengaliVoices.firstOrNull()
 
         if (selectedVoice != null) {
             engine.voice = selectedVoice
             engine.language = selectedVoice.locale
+            getSharedPreferences("jarvis_voice", MODE_PRIVATE).edit().putString("voice_name", selectedVoice.name).apply()
         } else {
             val bdResult = engine.setLanguage(Locale("bn", "BD"))
             if (bdResult == TextToSpeech.LANG_MISSING_DATA ||
-                bdResult == TextToSpeech.LANG_NOT_SUPPORTED) {
-                engine.setLanguage(Locale("bn", "IN"))
-            }
+                bdResult == TextToSpeech.LANG_NOT_SUPPORTED) engine.setLanguage(Locale("bn", "IN"))
         }
-
-        // Slightly softer pitch and a natural conversational pace.
-        engine.setPitch(1.08f)
-        engine.setSpeechRate(0.94f)
+        engine.setPitch(1.12f)
+        engine.setSpeechRate(0.92f)
     }
 
     private fun startSpeechInput() {
@@ -128,7 +120,10 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         }
     }
 
-    inner class Bridge {
+    private fun bengaliVoiceList(): List<android.speech.tts.Voice> =
+        tts?.voices?.filter { it.locale.language.equals("bn", ignoreCase = true) }?.sortedBy { it.name } ?: emptyList()
+
+        inner class Bridge {
         @JavascriptInterface fun startWakeWord() {
             runOnUiThread {
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -205,6 +200,33 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), permissionRequest)
                 }
             }
+        }
+        @JavascriptInterface fun getBengaliVoices(): String {
+            val arr = JSONArray()
+            bengaliVoiceList().forEach { voice ->
+                val n = voice.name.lowercase(Locale.ROOT)
+                val likelyFemale = n.contains("female") || n.contains("woman") || n.contains("fem") ||
+                    n.contains("nabanita") || n.contains("tanishaa") || n.contains("bnf")
+                arr.put(JSONObject().put("name", voice.name)
+                    .put("label", voice.name + if (likelyFemale) " — সম্ভাব্য Female" else ""))
+            }
+            return arr.toString()
+        }
+        @JavascriptInterface fun selectBengaliVoice(name: String): String {
+            val selected = bengaliVoiceList().firstOrNull { it.name == name }
+                ?: return "এই voice ফোনে পাওয়া যায়নি।"
+            runOnUiThread {
+                tts?.voice = selected
+                tts?.language = selected.locale
+                tts?.setPitch(1.12f)
+                tts?.setSpeechRate(0.92f)
+                getSharedPreferences("jarvis_voice", MODE_PRIVATE).edit().putString("voice_name", selected.name).apply()
+            }
+            val n = selected.name.lowercase(Locale.ROOT)
+            val female = n.contains("female") || n.contains("woman") || n.contains("fem") ||
+                n.contains("nabanita") || n.contains("tanishaa") || n.contains("bnf")
+            return if (female) "সম্ভাব্য Female voice নির্বাচন করা হয়েছে: ${selected.name}" else
+                "Voice নির্বাচন করা হয়েছে: ${selected.name}। নাম দেখে Female কিনা নিশ্চিত হওয়া যাচ্ছে না।"
         }
         @JavascriptInterface fun ask(provider: String, prompt: String, key: String, model: String) {
             thread {
