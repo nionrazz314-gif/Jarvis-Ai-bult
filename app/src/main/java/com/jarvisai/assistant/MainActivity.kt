@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -136,6 +137,25 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         }
         @JavascriptInterface fun stopWakeWord() {
             stopService(Intent(this@MainActivity, WakeWordService::class.java))
+        }
+        @JavascriptInterface fun openExternal(rawUrl: String) {
+            runOnUiThread {
+                try {
+                    val uri = Uri.parse(rawUrl)
+                    val scheme = uri.scheme?.lowercase(Locale.ROOT)
+                    if (scheme != "https" && scheme != "http") return@runOnUiThread
+                    if (scheme == "http") return@runOnUiThread
+                    val host = uri.host?.lowercase(Locale.ROOT).orEmpty()
+                    val allowed = host == "www.google.com" ||
+                        host == "www.facebook.com" ||
+                        host == "wa.me" ||
+                        host == "www.torproject.org"
+                    if (!allowed) return@runOnUiThread
+                    startActivity(Intent(Intent.ACTION_VIEW, uri))
+                } catch (_: Exception) {
+                    web.evaluateJavascript("alert('লিংকটি খোলা যায়নি।')", null)
+                }
+            }
         }
         @JavascriptInterface fun speak(text: String) {
             runOnUiThread {
