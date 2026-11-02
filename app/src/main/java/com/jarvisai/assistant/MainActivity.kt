@@ -4,6 +4,9 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -27,6 +30,15 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private var pageLoaded = false
     private var pendingWake = false
     private val wakePermissionRequest = 703
+    private var wakeReceiverRegistered = false
+    private val wakeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == WakeWordService.ACTION_WAKE_DETECTED) {
+                pendingWake = true
+                if (pageLoaded) dispatchWakeToPage()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,8 +51,18 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             override fun onPageFinished(view: WebView?, url: String?) {
                 pageLoaded = true
                 if (pendingWake) dispatchWakeToPage()
+                // Start hands-free wake-word listening automatically after the UI opens.
+                web.evaluateJavascript("window.autoStartWake && window.autoStartWake()", null)
             }
         }
+        val wakeFilter = IntentFilter(WakeWordService.ACTION_WAKE_DETECTED)
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(wakeReceiver, wakeFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            registerReceiver(wakeReceiver, wakeFilter)
+        }
+        wakeReceiverRegistered = true
         web.addJavascriptInterface(Bridge(), "Jarvis")
         setContentView(web)
         web.loadUrl("file:///android_asset/index.html")
@@ -236,5 +258,13 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         }
     }
 
-    override fun onDestroy() { tts?.shutdown(); web.destroy(); super.onDestroy() }
+    override fun onDestroy() {
+        if (wakeReceiverRegistered) {
+            unregisterReceiver(wakeReceiver)
+            wakeReceiverRegistered = false
+        }
+        tts?.shutdown()
+        web.destroy()
+        super.onDestroy()
+    }
 }
