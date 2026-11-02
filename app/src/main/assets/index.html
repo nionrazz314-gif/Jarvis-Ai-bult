@@ -12,15 +12,37 @@ main{max-width:760px;margin:auto;padding:16px 14px 130px}.hero{text-align:center
 #chat{display:flex;flex-direction:column;gap:12px;margin-top:16px}.msg{padding:13px 14px;border-radius:15px;max-width:92%;white-space:pre-wrap;line-height:1.5}.user{align-self:flex-end;background:#12456a;border:1px solid #22618a}.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--line)}.tag{font-size:10px;color:var(--cyan);display:block;margin-bottom:5px;letter-spacing:1px}
 .composer{position:fixed;bottom:0;left:0;right:0;background:#081525f5;border-top:1px solid var(--line);padding:12px;display:flex;gap:8px;max-width:760px;margin:auto}.composer input{min-width:0;flex:1;background:#102238;border:1px solid var(--line);border-radius:14px;padding:14px;color:white;font-size:15px;outline:none}.round{width:48px;border:1px solid #287ba3;background:#103a56;color:var(--cyan);border-radius:14px;font-size:19px}.send{background:var(--cyan);color:#031321;border:0;font-weight:800}
 .settings{display:none;background:var(--panel);border:1px solid var(--line);padding:14px;border-radius:15px;margin-top:12px}.settings label{display:block;color:var(--muted);font-size:12px;margin:10px 0 5px}.settings input{width:100%}.note{font-size:11px;color:#9eb3c7;line-height:1.5;margin-top:12px}
+.tools{margin:18px 0}.tools h3{font-size:15px;letter-spacing:1px;margin:0 0 10px;color:var(--cyan)}
+.toolgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.toolcard{background:linear-gradient(145deg,#122b43,#0c1a2b);border:1px solid var(--line);border-radius:14px;padding:13px;min-width:0}
+.toolcard .ico{font-size:23px}.toolcard b{display:block;margin:6px 0 3px;font-size:13px}.toolcard p{font-size:11px;line-height:1.4;color:var(--muted);margin:0 0 10px}
+.toolcard button{background:#103a56;color:var(--cyan);border:1px solid #287ba3;border-radius:9px;padding:8px 10px;width:100%;font-size:12px}
+.toolcard input{width:100%;background:#071525;border:1px solid var(--line);border-radius:8px;padding:9px;color:white;margin:4px 0 7px}
+.toolhint{font-size:10px;color:#9eb3c7;line-height:1.5;margin:9px 2px 0}
 </style></head><body>
 <header><div class="logo">J</div><div><h1>JARVIS AI</h1><small>PERSONAL AI ASSISTANT</small></div><div class="status">● READY</div></header>
 <main><section class="hero"><div class="orb">✧</div><h2>HELLO, I'M JARVIS</h2><p>আপনার ব্যক্তিগত AI সহকারী · বাংলা / English</p></section>
 <div class="toolbar"><select id="provider"><option value="groq">Groq (Free Tier)</option><option value="gemini">Google Gemini</option><option value="openai">OpenAI ChatGPT</option><option value="claude">Anthropic Claude</option></select><button onclick="toggleSettings()">⚙ API Settings</button><button onclick="clearChat()">Clear chat</button><button onclick="startWake()">🔊 Hands-free ON</button><button onclick="stopWake()">⏹ Listening OFF</button><button id="voiceToggle" onclick="toggleVoice()">🔊 Voice ON</button></div>
+<section class="tools">
+<h3>✦ ADVANCED TOOLS</h3>
+<div class="toolgrid">
+<div class="toolcard"><div class="ico">🛰️</div><b>Satellite Map</b><p>Google Maps-এর Satellite view খুলুন।</p><button onclick="openExternal('https://www.google.com/maps/@?api=1&map_action=map&basemap=satellite')">Open Satellite Map</button></div>
+<div class="toolcard"><div class="ico">🕸️</div><b>Dark Web Browser</b><p>Tor Browser-এর অফিসিয়াল Android পেজ। আলাদা অ্যাপ ইনস্টল করতে হবে।</p><button onclick="openExternal('https://www.torproject.org/download/#android')">Get Tor Browser</button></div>
+<div class="toolcard"><div class="ico">📘</div><b>Facebook Page</b><p>Facebook-এর অফিসিয়াল Page creation পেজ খুলুন।</p><button onclick="openExternal('https://www.facebook.com/pages/create/')">Create Page</button></div>
+<div class="toolcard"><div class="ico">💬</div><b>WhatsApp Message</b><p>দেশের কোডসহ নম্বর দিন, তারপর মেসেজ লিখুন।</p><input id="waNumber" inputmode="tel" placeholder="8801XXXXXXXXX"><input id="waMessage" placeholder="আপনার মেসেজ"><button onclick="openWhatsApp()">Open WhatsApp Chat</button></div>
+<div class="toolcard"><div class="ico">🌐</div><b>Website Builder</b><p>Jarvis-কে ওয়েবসাইটের ডিজাইন ও কোড তৈরি করতে বলুন।</p><button onclick="builderPrompt('website')">Build a Website</button></div>
+<div class="toolcard"><div class="ico">📱</div><b>App Builder</b><p>Jarvis-কে Android অ্যাপের পরিকল্পনা ও কোড তৈরি করতে বলুন।</p><button onclick="builderPrompt('app')">Build an App</button></div>
+</div>
+<p class="toolhint">নিরাপত্তা: Facebook ও WhatsApp-এ লগইন/অনুমতি তোমাকেই দিতে হবে। WhatsApp-এ মেসেজ পাঠানোর আগে অ্যাপে নিজে Send চাপবে। অচেনা .onion সাইট, ফাইল বা লিংক থেকে সতর্ক থাকো। Website/App Builder AI-কে কোড তৈরি করতে সাহায্য করে; নিজে থেকে প্রকাশ বা Play Store-এ আপলোড করে না।</p>
+</section>
 <section class="settings" id="settings"><b>API Key & Model</b><label>API Key (আপনার ফোনে সংরক্ষিত হবে)</label><input id="key" type="password" placeholder="Groq API key এখানে দিন"><label>Model name (ঐচ্ছিক)</label><input id="model" placeholder="openai/gpt-oss-20b (Groq default)"><button style="margin-top:12px" onclick="saveSettings()">Save settings</button><p class="note">Groq ব্যবহার করতে <a href="https://console.groq.com/keys" target="_blank" style="color:var(--cyan)">Groq Console</a> থেকে API key তৈরি করে এখানে দিন। Provider অনুযায়ী আলাদা API key সংরক্ষিত হবে। Groq default model: openai/gpt-oss-20b। Free Tier-এ ব্যবহার ও rate limit আছে; সীমা শেষ হলে অপেক্ষা করতে হতে পারে। API key এই ফোনের local storage-এ থাকে; কারও সঙ্গে শেয়ার করবেন না।</p></section>
 <div id="chat"><div class="msg bot"><span class="tag">JARVIS</span>স্বাগতম! আমি JARVIS। আমাকে কিছু জিজ্ঞেস করুন অথবা মাইক্রোফোন চাপুন।</div></div></main>
 <div class="composer"><button class="round" onclick="listen()" title="Voice input">🎙</button><input id="prompt" placeholder="JARVIS-কে কিছু বলুন..." onkeydown="if(event.key==='Enter')send()"><button class="round send" onclick="send()">➤</button></div>
 <script>
 const $=id=>document.getElementById(id);
+function openExternal(url){if(window.Jarvis&&Jarvis.openExternal)Jarvis.openExternal(url);else window.open(url,'_blank')}
+function openWhatsApp(){let n=$('waNumber').value.replace(/[^0-9]/g,'');let m=$('waMessage').value.trim();if(n.length<8){alert('সঠিক ফোন নম্বর দিন, দেশের কোডসহ।');return}if(!m){alert('মেসেজ লিখুন।');return}openExternal('https://wa.me/'+n+'?text='+encodeURIComponent(m))}
+function builderPrompt(kind){let p=kind==='website'?'আমাকে একটি সম্পূর্ণ responsive website বানাতে সাহায্য করো। আগে প্রয়োজনীয় প্রশ্ন করো, তারপর HTML, CSS ও JavaScript কোড আলাদা করে দাও।':'আমাকে একটি Android app বানাতে সাহায্য করো। আগে প্রয়োজনীয় প্রশ্ন করো, তারপর Kotlin/Android Studio project structure ও সম্পূর্ণ source code দাও।';$('prompt').value=p;send();window.scrollTo(0,document.body.scrollHeight)}
 function toggleSettings(){$('settings').style.display=$('settings').style.display==='block'?'none':'block';$('key').value=localStorage.getItem('key_'+$('provider').value)||'';$('model').value=localStorage.getItem('model_'+$('provider').value)||''}
 $('provider').addEventListener('change',()=>{if($('settings').style.display==='block')toggleSettings(),toggleSettings()});
 function saveSettings(){let p=$('provider').value;localStorage.setItem('key_'+p,$('key').value.trim());localStorage.setItem('model_'+p,$('model').value.trim());alert('Settings saved on this device.')}
