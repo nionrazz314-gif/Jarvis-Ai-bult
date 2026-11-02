@@ -171,20 +171,28 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             return try {
                 val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
                 val network = cm.activeNetwork
-                val caps = network?.let { cm.getNetworkCapabilities(it) }
-                    ?: return "এখন কোনো active internet network পাওয়া যায়নি।"
+                    ?: return "ফোনে active network নেই। Wi-Fi বা Mobile Data চালু করে আবার চেষ্টা করুন।"
+                val caps = cm.getNetworkCapabilities(network)
+                    ?: return "Network পাওয়া গেছে, কিন্তু Android connection details পড়তে পারেনি।"
+                val types = mutableListOf<String>()
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) types.add("Wi-Fi")
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) types.add("Mobile data")
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) types.add("Ethernet")
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) types.add("VPN")
                 if (android.os.Build.VERSION.SDK_INT >= 35 &&
-                    caps.hasTransport(NetworkCapabilities.TRANSPORT_SATELLITE)) {
-                    "🛰️ Satellite transport detected — ফোনের Android system satellite network হিসেবে শনাক্ত করেছে।"
-                } else {
-                    val types = mutableListOf<String>()
-                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) types.add("Wi-Fi")
-                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) types.add("Mobile data")
-                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) types.add("Ethernet")
-                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) types.add("VPN")
-                    if (types.isEmpty()) "Internet network connected; type not identified."
-                    else "বর্তমান সংযোগ: " + types.joinToString(" + ") +
-                        ". Android satellite transport report করছে না; এর মানে satellite-to-phone service একেবারেই নেই—এমন নয়।"
+                    caps.hasTransport(NetworkCapabilities.TRANSPORT_SATELLITE)) types.add("Satellite")
+
+                val hasInternet = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                val validated = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                val connection = if (types.isEmpty()) "Network type অজানা" else types.joinToString(" + ")
+
+                when {
+                    !hasInternet -> "সংযোগ আছে ($connection), কিন্তু এই network Android-কে Internet access দেয়নি। Data/Wi-Fi বা operator settings পরীক্ষা করুন।"
+                    !validated -> "সংযোগ আছে ($connection), কিন্তু Android এখনো Internet access verify করতে পারেনি। Captive portal, data limit বা operator সমস্যা হতে পারে।"
+                    android.os.Build.VERSION.SDK_INT >= 35 &&
+                        caps.hasTransport(NetworkCapabilities.TRANSPORT_SATELLITE) ->
+                        "🛰️ Internet connected via Satellite transport."
+                    else -> "✅ Internet connected: $connection. Jarvis এখন API server-এ request পাঠাতে পারবে।"
                 }
             } catch (e: Exception) {
                 "Network status পড়া যায়নি: " + (e.message ?: "unknown error")
