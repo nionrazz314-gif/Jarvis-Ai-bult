@@ -20,6 +20,10 @@ import java.util.zip.ZipInputStream
 import kotlin.concurrent.thread
 
 class WakeWordService : Service(), RecognitionListener {
+    companion object {
+        const val ACTION_WAKE_DETECTED = "com.jarvisai.assistant.ACTION_WAKE_DETECTED"
+    }
+
     private var model: Model? = null
     private var speech: SpeechService? = null
     @Volatile private var triggered = false
@@ -80,6 +84,9 @@ class WakeWordService : Service(), RecognitionListener {
         if (heard.contains("jarvis")) {
             triggered = true
             speech?.stop()
+            // Notify the open app immediately; if the app is backgrounded, the
+            // ongoing notification remains the user-controlled way to open it.
+            sendBroadcast(Intent(ACTION_WAKE_DETECTED).setPackage(packageName).putExtra("JARVIS_WAKE", true))
             updateNotification("Jarvis জেগে উঠেছে — কথা বলতে নোটিফিকেশনে চাপ দিন")
         }
     }
